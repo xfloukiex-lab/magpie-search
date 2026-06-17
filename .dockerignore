@@ -1,0 +1,13 @@
+.git
+standalone/
+dist/
+build/
+_pyibuild/
+*.egg-info/
+__pycache__/
+*.pyc
+.pytest_cache/
+SCRUB_REPORT.md
+tests/leak_denylist.local.txt
+_standalone_entry.py
+*.spec
