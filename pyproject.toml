@@ -18,7 +18,6 @@ maintainers = [
 keywords = ["magpie-search", "claude-code", "transcripts", "search", "ai-agents", "local-first"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
     "Operating System :: MacOS :: MacOS X",
