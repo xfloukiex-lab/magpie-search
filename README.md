@@ -152,6 +152,12 @@ set. That's the whole saving: the breadth is free, you pay only for the answer.
 pip install magpie-search
 ```
 
+Or install the latest straight from source (pulls all dependencies):
+
+```bash
+pip install "git+https://github.com/xfloukiex-lab/magpie-search.git"
+```
+
 Optional — add the local-LLM features (the cross-encoder reranker runs on the
 base install; the session summarizer needs Ollama):
 
