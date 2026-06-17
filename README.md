@@ -117,6 +117,33 @@ Plug Magpie into an AI and the pair can form a RAG — Magpie is the R, the AI y
 bring is the G. But Magpie by itself ships only the R, and a stronger R than
 usual. It finds and ranks the truth; it never generates the answer.
 
+## Deep web search — research breadth without the token bill
+
+The expensive part of "deep research" is **reasoning**, and the multi-agent
+approach pays for it N times over — one full LLM context per agent, often
+*millions* of tokens for a single question. But reasoning doesn't need to fan
+out; one capable model already in context can synthesize. Only the **searching**
+needs breadth — and searching the web is pure retrieval, **zero LLM tokens**.
+
+`magpie-search deepweb` is built on that asymmetry. It fires several sub-queries
+at the web in parallel, fuses them by trust-weighted RRF + dedup-by-URL into one
+compact, token-budget-trimmed source set, optionally reads the top pages' text
+(still token-free), and reports how many independent domains corroborate the
+result — an agent-free version of the verification a research swarm pays agents
+to do.
+
+So you get the breadth, page-reading, and corroboration of a multi-agent deep
+search, but your model only pays for a **single synthesis pass** over a trimmed
+result set — *thousands* of tokens where a swarm spends *millions*.
+
+```bash
+# one question, several angles, read the top pages — all token-free retrieval
+magpie-search deepweb "the question" --q "another angle" --q "a third angle" --thorough
+```
+
+The model in your loop then does one synthesis pass over the merged, corroborated
+set. That's the whole saving: the breadth is free, you pay only for the answer.
+
 ---
 
 ## Install
