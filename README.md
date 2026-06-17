@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/magpie-logo.png" alt="Magpie Search" width="180">
+  <img src="https://raw.githubusercontent.com/xfloukiex-lab/magpie-search/main/assets/magpie-logo.png" alt="Magpie Search" width="180">
 </p>
 
 <h1 align="center">Magpie Search</h1>
