@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "magpie-search"
+version = "1.1.0"
+description = "Local-first search tool for Claude Code session transcripts — hybrid keyword + semantic search, with optional multi-source (federated) trust-tagged search."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [
+    { name = "VektorGeist LLC", email = "floukie@vektorgeist.com" },
+]
+maintainers = [
+    { name = "VektorGeist LLC", email = "floukie@vektorgeist.com" },
+]
+keywords = ["magpie-search", "claude-code", "transcripts", "search", "ai-agents", "local-first"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "sqlite-vec>=0.1.6",
+    "fastembed~=0.4",
+]
+
+[project.optional-dependencies]
+# LLM augmentation — summarizer + cross-encoder reranker + trust monitor.
+# Cross-encoder is via fastembed (in base deps). The 'llm' extra is named
+# for the Ollama-based summarizer specifically, since that's the heavyweight
+# dependency. Reranker works in the base install.
+llm = []
+# Optional precise token counting for the multi-source budget (heuristic by
+# default — no dep needed). Enable with MAGPIE_SEARCH_TOKENIZER=tiktoken.
+tokenizer = ["tiktoken>=0.7"]
+dev = [
+    "pytest>=8.0",
+    "pytest-xdist>=3.5",
+]
+
+[project.scripts]
+magpie-search = "magpie_search.cli:main"
+magpie-search-mcp = "magpie_search.mcp_server:main"
+# Back-compat aliases for the pre-rename `magpi` command. Deprecated;
+# kept so existing launchers / Task Scheduler / cron entries keep working.
+magpi = "magpie_search.cli:main"
+magpi-mcp = "magpie_search.mcp_server:main"
+
+[project.urls]
+Homepage = "https://vektorgeist.com"
+Repository = "https://github.com/xfloukiex-lab/magpie-search"
+Issues = "https://github.com/xfloukiex-lab/magpie-search/issues"
+
+# Federated-search providers are discoverable plugins. Built-ins are registered
+# in code (magpie_search.providers._BUILTINS); third-party/operator-local
+# providers advertise themselves here and are referenced by type name in
+# `sources` with no core changes.
+[project.entry-points."magpie_search.providers"]
+transcripts = "magpie_search.providers.transcripts:TranscriptsProvider"
+files = "magpie_search.providers.files:FilesProvider"
+vector = "magpie_search.providers.vector:VectorProvider"
+kg = "magpie_search.providers.kg:KGProvider"
+web = "magpie_search.providers.web:WebProvider"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["magpie_search*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-q --no-header"

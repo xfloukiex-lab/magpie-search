@@ -1,0 +1,13 @@
+[Unit]
+Description=Magpi — hourly indexing trigger
+Documentation=https://github.com/vektorgeist/magpi
+
+[Timer]
+# Fire 2 minutes after boot, then every hour on the hour.
+OnBootSec=2min
+OnUnitActiveSec=1h
+Persistent=true
+Unit=magpi-indexer.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,30 @@
+# Build / packaging artifacts — these embed the BUILD MACHINE's absolute paths
+# (e.g. compiled .pyc files carry C:\Users\<dev>\...). NEVER publish them.
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+dist_*/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtualenvs / local
+.venv/
+venv/
+.env
+
+# Local data / indexes (never source)
+*.db
+*.db-wal
+*.db-shm
+
+# Maintainer-internal — never publish (names individuals / records the scrub)
+SCRUB_REPORT.md
+tests/leak_denylist.local.txt
+
+# Scratch / local previews
+_logo_showcase.html
+_*.html

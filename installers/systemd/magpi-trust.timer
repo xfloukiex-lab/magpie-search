@@ -1,0 +1,12 @@
+[Unit]
+Description=Magpi — hourly trust monitor trigger
+Documentation=https://github.com/vektorgeist/magpi
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=1h
+Persistent=true
+Unit=magpi-trust.service
+
+[Install]
+WantedBy=timers.target

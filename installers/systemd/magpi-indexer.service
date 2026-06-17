@@ -1,0 +1,16 @@
+[Unit]
+Description=Magpi — incremental Claude Code transcript indexing
+Documentation=https://github.com/vektorgeist/magpi
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/magpi index
+# Environment can be overridden in ~/.config/environment.d/magpi.conf
+# Common overrides:
+#   MAGPI_HOME=/path/to/data
+#   MAGPI_MODELS_DIR=/path/to/models
+
+[Install]
+WantedBy=default.target

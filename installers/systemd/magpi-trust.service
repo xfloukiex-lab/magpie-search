@@ -1,0 +1,11 @@
+[Unit]
+Description=Magpi — LLM trust monitor (audit log scan)
+Documentation=https://github.com/vektorgeist/magpi
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/python -m magpi.llm.bakeoff trust
+# Only useful if you have magpi[llm] installed and run the summarizer/reranker.
+
+[Install]
+WantedBy=default.target
