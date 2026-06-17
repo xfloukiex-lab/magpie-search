@@ -5,7 +5,7 @@ benchmark (10 long-term conversations, ~200 QA each, evidence references
 to specific dia_ids).
 
 Pipeline:
-  1. Load locomo10.json from ~/.aviary/eval/locomo10.json.
+  1. Load locomo10.json from ~/.magpie-search/eval/locomo10.json.
   2. Build a temp SQLite DB with the SAME schema as production (FTS5 +
      vec0 + redactor + embedder) — proves the actual codepath, no shims.
   3. For each conversation: index all turns, embed them, then run each
@@ -30,7 +30,7 @@ from typing import Any
 from . import embeddings, indexer, redactor
 
 
-LOCOMO_PATH = Path.home() / ".aviary" / "eval" / "locomo10.json"
+LOCOMO_PATH = Path.home() / ".magpie-search" / "eval" / "locomo10.json"
 
 
 def load_locomo(path: Path = LOCOMO_PATH) -> list[dict]:

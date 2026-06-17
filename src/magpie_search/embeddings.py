@@ -8,7 +8,7 @@ the semantic side of `transcript.search`. Hard requirements:
     cannot be loaded, `available()` returns False and the rest of the
     indexer + search stack falls back to FTS5-only with no error.
   - Model cache lives at $MAGPIE_SEARCH_MODELS_DIR (default ~/.magpie-search/models/;
-    legacy AVIARY_MODELS_DIR honored), NOT the fastembed default (%TEMP%)
+    NOT the fastembed default (%TEMP%)
     which Windows will eventually clean.
 
 Model: sentence-transformers/all-MiniLM-L6-v2 (384-dim, ~80 MB).
@@ -27,9 +27,9 @@ DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 
 def _cache_dir() -> Path:
-    # Resolution: MAGPIE_SEARCH_MODELS_DIR > AVIARY_MODELS_DIR (legacy) > ~/.magpie-search/models/
+    # Resolution: MAGPIE_SEARCH_MODELS_DIR > ~/.magpie-search/models/
     # Treat empty-string env vars as unset (else `Path("")` resolves to CWD).
-    env = os.environ.get("MAGPIE_SEARCH_MODELS_DIR") or os.environ.get("AVIARY_MODELS_DIR")
+    env = os.environ.get("MAGPIE_SEARCH_MODELS_DIR")
     if env and env.strip():
         return Path(env)
     return Path.home() / ".magpie-search" / "models"

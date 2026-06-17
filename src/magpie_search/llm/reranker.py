@@ -51,7 +51,6 @@ def _get_reranker():
         from fastembed.rerank.cross_encoder import TextCrossEncoder
         cache_dir = (
             os.environ.get("MAGPIE_SEARCH_MODELS_DIR")
-            or os.environ.get("AVIARY_MODELS_DIR")
             or str(Path.home() / ".magpie-search" / "models")
         )
         _RERANKER = TextCrossEncoder(model_name=_RERANKER_MODEL, cache_dir=cache_dir)

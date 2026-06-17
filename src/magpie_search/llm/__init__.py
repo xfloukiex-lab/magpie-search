@@ -15,8 +15,7 @@ Conservative-by-design: all gating probes must pass for `trust: clean`.
 Otherwise `trust: degraded` and the model output is suppressed.
 
 For the standalone CLI / library, calling these functions is itself the
-"enable" signal — no env var gate. The aviary-magpi plugin re-introduces
-the AVIARY_LLM_ENABLE gate when run under Aviary's swarm.
+"enable" signal — no env var gate.
 """
 from . import client, audit, guardrails
 from .reranker import search_rerank

@@ -177,7 +177,6 @@ def summarize(*, session_id: str, n_messages: int = 80) -> dict[str, Any]:
 
     raw_threshold = (
         os.environ.get("MAGPIE_SEARCH_SEMANTIC_GROUNDING_THRESHOLD")
-        or os.environ.get("AVIARY_LLM_SEM_GROUNDING_THRESHOLD")
         or "0.5"
     )
     try:

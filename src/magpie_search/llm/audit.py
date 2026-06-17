@@ -6,7 +6,7 @@ Every entry has at minimum:
     trust (clean | degraded | untrusted), fallback_fired, probe_results, ms.
 
 The trust monitor (`magpie_search.llm.trust`, or `llm.trust_check` swarm role
-via aviary-magpi) tails this file hourly to compute bypass rate,
+tails this file hourly to compute bypass rate,
 fallback rate, drift, and surface alerts.
 
 Never deletes entries — old ones are evidence. Rotation, if ever needed,
@@ -28,20 +28,20 @@ _LOCK = threading.Lock()
 # (single rotation — older histories overwrite). Configurable via env.
 _MAX_BYTES = int(
     os.environ.get("MAGPIE_SEARCH_AUDIT_MAX_BYTES")
-    or os.environ.get("AVIARY_LLM_AUDIT_MAX_BYTES")
+   
     or str(50 * 1024 * 1024)
 )
 
 
 def _path() -> Path:
-    # Resolution: MAGPIE_SEARCH_AUDIT_LOG > AVIARY_LLM_AUDIT_LOG (legacy) > $MAGPIE_SEARCH_HOME/llm-audit.jsonl
+    # Resolution: MAGPIE_SEARCH_AUDIT_LOG > $MAGPIE_SEARCH_HOME/llm-audit.jsonl
     # Empty-string env vars are treated as unset — otherwise `Path("")` resolves
     # to CWD and we'd scatter audit logs across whatever directory the caller
     # was launched from.
-    override = os.environ.get("MAGPIE_SEARCH_AUDIT_LOG") or os.environ.get("AVIARY_LLM_AUDIT_LOG")
+    override = os.environ.get("MAGPIE_SEARCH_AUDIT_LOG")
     if override and override.strip():
         return Path(override)
-    base = os.environ.get("MAGPIE_SEARCH_HOME") or os.environ.get("AVIARY_TRANSCRIPTS_DIR")
+    base = os.environ.get("MAGPIE_SEARCH_HOME")
     if base and base.strip():
         return Path(base) / "llm-audit.jsonl"
     return Path.home() / ".magpie-search" / "llm-audit.jsonl"
@@ -100,14 +100,10 @@ def log(event: dict[str, Any]) -> None:
         line = json.dumps(record, ensure_ascii=False, default=str) + "\n"
         # In-process lock (avoids reordering between threads in this
         # process) PLUS a cross-process file lock (avoids interleaved
-        # writes between cuckoo daemon, the interactive agent, magpie_search CLI,
-        # and aviary-magpi plugin). The cross-process lock also
+        # writes between concurrent writers). The cross-process lock also
         # serializes against the rotation rename.
         with _LOCK:
-            try:
-                from aviary.core.safe_io import file_lock as _file_lock
-            except Exception:
-                _file_lock = None  # aviary not installed — fall back to in-process lock only
+            _file_lock = None  # standalone build: in-process lock only
             if _file_lock is not None:
                 with _file_lock(p, timeout=5.0):
                     _maybe_rotate(p)

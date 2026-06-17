@@ -23,7 +23,7 @@ def _get_embedder():
     """Lazy-init embedding model.
 
     Critical: uses the same cache dir as the transcript indexer (~/.magpie-search/models
-    by default, env-override MAGPIE_SEARCH_MODELS_DIR; legacy AVIARY_MODELS_DIR honored).
+    by default, env-override MAGPIE_SEARCH_MODELS_DIR).
     The fastembed default temp cache sometimes ends up with partial snapshots
     ("Could not find config.json") — reusing the indexer's cache means we hit
     a model that's already verified end-to-end via the corpus embed.
@@ -43,7 +43,6 @@ def _get_embedder():
         from fastembed import TextEmbedding
         cache_dir = (
             os.environ.get("MAGPIE_SEARCH_MODELS_DIR")
-            or os.environ.get("AVIARY_MODELS_DIR")
             or str(Path.home() / ".magpie-search" / "models")
         )
         _EMBEDDER = TextEmbedding(

@@ -1,7 +1,7 @@
 """client — Ollama HTTP wrapper with timeout, retry, and audit hookup.
 
 Talks to a local Ollama instance (default :11434, overridable via
-$MAGPIE_SEARCH_OLLAMA_HOST or legacy $AVIARY_OLLAMA_HOST).
+$MAGPIE_SEARCH_OLLAMA_HOST).
 Every successful or failed call is logged via audit.log.
 
 Public:
@@ -86,7 +86,6 @@ def generate(
     """
     host = host or (
         os.environ.get("MAGPIE_SEARCH_OLLAMA_HOST")
-        or os.environ.get("AVIARY_OLLAMA_HOST")
         or DEFAULT_HOST
     )
     payload: dict[str, Any] = {
@@ -186,7 +185,6 @@ def health() -> dict[str, Any]:
     """Probe Ollama. Used by trust monitor / boot checks."""
     host = (
         os.environ.get("MAGPIE_SEARCH_OLLAMA_HOST")
-        or os.environ.get("AVIARY_OLLAMA_HOST")
         or DEFAULT_HOST
     )
     t0 = time.time()
