@@ -301,7 +301,7 @@ and Task Scheduler (Windows).
 **Magpie Search is built by [VektorGeist LLC](https://vektorgeist.com).**
 
 We build local-first tools for people who run their own AI. Magpie is the search
-core; [Aviary](https://vektorgeist.com) is our agent platform.
+core; our agent platform is at **[vektorgeist.com](https://vektorgeist.com)**.
 
 - Website: **[vektorgeist.com](https://vektorgeist.com)**
 - Contact: **floukie@vektorgeist.com**
