@@ -77,7 +77,7 @@ Security + ship-hygiene release (customer-edition readiness).
   the shippable package — no longer included in the customer wheel.
 
 ### Tests
-- `aviary-magpi` companion plugin: added a real test suite (previously
+- `the companion plugin` companion plugin: added a real test suite (previously
   untested) — role-registration wiring, env-path `setdefault` semantics,
   LLM gating, and the personal-config allowlist injection guard.
 
@@ -120,7 +120,7 @@ verified end-to-end and independently audited (Queen → c1 → c2 hive).
   catch-up under the advisory lock every pass, so coverage is
   complete-by-construction.
 - **Deterministic index location.** When no env var is set and an
-  Aviary operator index exists, it is authoritative — a bare
+  an operator index exists, it is authoritative — a bare
   `python -m magpi` and the swarm can no longer silently diverge onto
   two ~85k DBs. True standalone installs still use `~/.magpi`.
 - **Backup self-monitoring (GAP-4).** Every run writes a durable
@@ -172,10 +172,10 @@ verified end-to-end and independently audited (Queen → c1 → c2 hive).
   `python -m magpi.nightly_sync` keep working — the operator-specific
   config has moved into `~/.magpi/backup.env`.
 - **Cross-process file locking on `llm-audit.jsonl`** — concurrent writers
-  (cuckoo daemon, interactive sessions, magpi CLI, aviary-magpi plugin)
+  (cuckoo daemon, interactive sessions, magpi CLI, companion plugin)
   now serialize through a `file_lock`. Closes a window where torn JSONL
   lines could land and be silently dropped by `trust.tail()`. Requires
-  `aviary>=...` to be importable; falls back to in-process lock only if
+  the companion package to be importable; falls back to in-process lock only if
   not available.
 - **Redactor preserves contextual prefix** on four pattern kinds:
   `Bearer xxx` → `Bearer [REDACTED:bearer_token]`,
@@ -259,7 +259,7 @@ behavior. New env vars (all optional):
 
 ### Added
 
-- Initial extraction from `aviary.desktop.transcript_indexer` into a
+- Initial extraction from `an internal transcript_indexer` into a
   standalone Python package.
 - `magpi.indexer` — JSONL → SQLite (FTS5 + sqlite-vec) ingest with
   byte-cursor incremental indexing and per-file advisory locking.
@@ -273,5 +273,5 @@ behavior. New env vars (all optional):
   passwords / OTPs, optional Presidio NER pass.
 - `magpi.nightly_sync` — operator-specific VM-rsync workflow
   (replaced in 0.2.0 by the generic `magpi.backup` module).
-- `aviary-magpi` plugin — exposes magpi roles into the Aviary
+- `the companion plugin` plugin — exposes magpi roles into the operator
   swarm (transcript.*, archivist.summarize, llm.trust_check).

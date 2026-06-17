@@ -17,8 +17,8 @@ on your machine; nothing is sent to any external service.
 **Indexing**
 - **Incremental**: tracks a byte cursor per file, so live sessions get picked up
   on the next pass without re-reading. Bounded memory even on huge sessions.
-- **Deterministic location**: shares the Aviary operator index if present, else
-  uses `~/.magpie-search`.
+- **Deterministic location**: uses `~/.magpie-search` (override with
+  `MAGPIE_SEARCH_HOME`).
 - Optional **dedup** + **noise filtering** to cut repeated/low-value content.
 
 **Security (the part that matters for transcripts)**
@@ -43,8 +43,6 @@ on your machine; nothing is sent to any external service.
 **Integrations**
 - **MCP server** (`magpie-search-mcp`): exposes search/recent/session/list/
   stats/reindex as tools over JSON-RPC stdio — wire it into any MCP client.
-- **Aviary plugin** (`aviary-magpi`): registers `transcript.*` roles into the
-  Aviary swarm.
 
 ## How to use it
 
