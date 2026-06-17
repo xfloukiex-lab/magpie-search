@@ -6,7 +6,6 @@
 
 <p align="center">
   <a href="https://pypi.org/project/magpie-search/"><img alt="PyPI" src="https://img.shields.io/pypi/v/magpie-search.svg?color=7c5cff"></a>
-  <a href="https://pepy.tech/project/magpie-search"><img alt="Downloads" src="https://static.pepy.tech/badge/magpie-search"></a>
   <a href="https://pypi.org/project/magpie-search/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/magpie-search.svg?color=22d3ee"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg"></a>
 </p>
