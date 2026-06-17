@@ -41,9 +41,10 @@ floods the AI's context. Ask it to go deep and it expands one question into many
 reads the pages, and tells you how many independent sources agree — a full
 research sweep without an army of agents.
 
-It runs **entirely on the machine**. No server, no account, no telemetry. The
-AI's transcripts and files never leave. It plugs into whatever AI is running over
-**MCP**, so the agent can reach all six sources the instant it needs them.
+It runs **entirely on the machine**. No server, no account, and no telemetry
+unless you turn it on. The AI's transcripts and files never leave. It plugs into
+whatever AI is running over **MCP**, so the agent can reach all six sources the
+instant it needs them.
 
 It is a tool for an AI.
 
@@ -260,9 +261,20 @@ accessible via `magpie-search session SESSION-ID`.
 
 ## Privacy
 
-Magpie Search is a local tool. **No server, no account, no telemetry, no
-analytics, no auto-update, no crash reporter.** Your transcripts, the index, the
-audit log, the model cache, and the backups all live on your machine. The only
+Magpie Search is a local tool. No server, no account, no auto-update, no crash
+reporter, and **no telemetry unless you explicitly opt in** (see below). Your
+transcripts, the index, the audit log, the model cache, and the backups all live
+on your machine.
+
+**Opt-in telemetry.** Telemetry is **off by default** — magpie sends nothing
+until you run `magpie-search telemetry enable` (or set
+`MAGPIE_SEARCH_TELEMETRY=1`). When on, it sends only **anonymous usage**: which
+command ran, search mode, result/hit counts, latency, error class, and your
+magpie/python/OS versions, tagged with a random install id. It **never** sends
+your queries, file paths, results, transcript content, username, or IP — a
+hard content firewall in `telemetry.py` drops anything that isn't a number or a
+short enum token. Disable anytime with `magpie-search telemetry disable`; check
+state with `magpie-search telemetry status`. The only
 network calls it ever makes are: your local Ollama server (LLM features), your
 own backup target (only when you run `backup`), and a one-time model download
 from Hugging Face on first run. Verify it yourself with `tcpdump`, Wireshark, or

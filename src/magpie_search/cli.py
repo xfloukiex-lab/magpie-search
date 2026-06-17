@@ -213,6 +213,22 @@ def _cmd_backup(args: argparse.Namespace) -> int:
     return _bk.main(forwarded)
 
 
+def _cmd_telemetry(args: argparse.Namespace) -> int:
+    from . import telemetry
+    if args.action == "enable":
+        telemetry.enable()
+        print("Telemetry ENABLED. Anonymous usage only — never your queries, "
+              "file paths, or transcript content.\nDisable anytime: "
+              "magpie-search telemetry disable")
+    elif args.action == "disable":
+        telemetry.disable()
+        print("Telemetry disabled.")
+    else:
+        import json as _json
+        print(_json.dumps(telemetry.status(), indent=2))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="magpie-search",
@@ -299,6 +315,11 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("stats", help="index size + counts")
     sp.set_defaults(func=_cmd_stats)
 
+    sp = sub.add_parser("telemetry",
+                        help="opt in/out of anonymous usage telemetry (off by default)")
+    sp.add_argument("action", choices=["enable", "disable", "status"])
+    sp.set_defaults(func=_cmd_telemetry)
+
     sp = sub.add_parser("backup", help="back up transcripts to a configurable destination")
     sp.add_argument("--dry-run", action="store_true",
                     help="print every command without executing")
@@ -329,7 +350,25 @@ def _make_stdio_unicode_safe() -> None:
 def main(argv: list[str] | None = None) -> int:
     _make_stdio_unicode_safe()
     args = build_parser().parse_args(argv)
-    return args.func(args)
+    if getattr(args, "cmd", None) == "telemetry":
+        return args.func(args)
+    import time
+    from . import telemetry
+    telemetry.maybe_first_run_notice()
+    t0 = time.monotonic()
+    rc, err = 1, None
+    try:
+        rc = args.func(args)
+        return rc
+    except Exception as exc:
+        err = type(exc).__name__
+        raise
+    finally:
+        _t = telemetry.emit("command", command=getattr(args, "cmd", None),
+                            mode=getattr(args, "mode", None), rc=rc,
+                            ms=int((time.monotonic() - t0) * 1000), error=err)
+        if _t is not None:
+            _t.join(2.0)  # give the POST a chance before exit; capped, fail-open
 
 
 if __name__ == "__main__":
