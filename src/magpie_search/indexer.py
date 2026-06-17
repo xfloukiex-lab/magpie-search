@@ -2,7 +2,7 @@
 
 Source: `~/.claude/projects/<project-dir>/<session-uuid>.jsonl`
 Sink:   `~/.magpie-search/index.db` (standalone) or `$MAGPIE_SEARCH_HOME/index.db` (configurable).
-        The aviary-magpi plugin sets `MAGPIE_SEARCH_HOME=~/.aviary/transcripts/` to keep
+        $MAGPIE_SEARCH_HOME overrides it; otherwise ~/.magpie-search is used to keep
         existing operator data in place.
 
 Incremental: tracks byte offset + line count per source file in
@@ -181,58 +181,16 @@ def transcripts_dir() -> Path:
     """Default install location.
 
     Resolution order:
-      1. $MAGPIE_SEARCH_HOME              (preferred)
-      2. $AVIARY_TRANSCRIPTS_DIR   (legacy — set by aviary-magpi plugin)
-      3. ~/.magpie-search                 (standalone default)
-
-    K1 (magpie_search-hardening audit 2026-05-16, hardened 2026-05-16): when
-    neither env var is set, this used to silently pick ~/.magpie-search. But the
-    aviary-magpi plugin sets MAGPIE_SEARCH_HOME=~/.aviary/transcripts, so the
-    swarm indexed/searched a DIFFERENT database than a bare
-    `python -m magpie_search …` invocation. Both could hold a full ~85k-message
-    index and diverge with no signal — the same
-    env-dependent-resolution-with-no-loud-signal class as the SSH-alias
-    backup outage. A one-time stderr WARNING was the first mitigation,
-    but a warning still needs a human to be watching — the exact
-    "human is the failure detector" pattern we're trying to remove.
-
-    Fixed properly: resolution is now DETERMINISTIC. If an Aviary
-    operator index exists (~/.aviary/transcripts/index.db), that install
-    is authoritative — a bare invocation resolves to the SAME database
-    the swarm maintains, so they cannot diverge. We only fall back to
-    the standalone ~/.magpie-search when there is no operator install at all
-    (a genuine standalone user, who legitimately wants ~/.magpie-search and is
-    unaffected). Non-destructive: nothing is deleted; a pre-existing
-    standalone ~/.magpie-search/index.db is simply no longer the active DB on a
-    box that is also an Aviary operator. A one-time INFO line states
-    which DB was chosen so the resolution is observable, not silent."""
-    global _DUAL_DB_WARNED
-    env = os.environ.get("MAGPIE_SEARCH_HOME") or os.environ.get("AVIARY_TRANSCRIPTS_DIR")
+      1. $MAGPIE_SEARCH_HOME   (preferred)
+      2. ~/.magpie-search      (default; a pre-rename ~/.magpi index is reused)
+    """
+    env = os.environ.get("MAGPIE_SEARCH_HOME")
     if env:
         return Path(env)
     standalone = _home() / ".magpie-search"
     legacy = _home() / ".magpi"
     if not standalone.exists() and (legacy / "index.db").exists():
-        # Pre-rename standalone install — reuse its index in place.
-        standalone = legacy
-    aviary_dir = _home() / ".aviary" / "transcripts"
-    aviary_idx = aviary_dir / "index.db"
-    if aviary_idx.exists():
-        # Aviary operator install detected — it is authoritative. Bare
-        # invocations now share the swarm's DB instead of forking a
-        # divergent standalone copy (fixes both the read AND write path).
-        if not _DUAL_DB_WARNED:
-            _DUAL_DB_WARNED = True
-            extra = ""
-            if (standalone / "index.db").exists():
-                extra = (f" (a standalone {standalone / 'index.db'} also "
-                         "exists but is NOT used here — it is now inert; "
-                         "delete it manually if you want the space back)")
-            sys.stderr.write(
-                "magpie_search: no MAGPIE_SEARCH_HOME set; Aviary operator install "
-                f"detected -> using {aviary_idx}{extra}.\n"
-            )
-        return aviary_dir
+        return legacy
     return standalone
 
 

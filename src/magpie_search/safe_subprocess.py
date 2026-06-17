@@ -7,9 +7,6 @@ has set (API tokens, app passwords, etc.). `safe_env()` strips those
 known + pattern-matched secret names so an exec'd binary (or a
 compromised tool on PATH) can't read them.
 
-Same denylist shape as `aviary.core.safe_subprocess`, kept in a separate
-module so magpie_search can ship independently of Aviary. If the two ever drift,
-the canonical reference is the aviary version (more frequently audited).
 
 **What DOES flow through to children (intentional, not a leak):**
 - `SSH_AUTH_SOCK` and `SSH_AGENT_PID` — required for ssh / rsync / scp
@@ -38,12 +35,8 @@ from typing import Any
 _KNOWN_SECRET_KEYS: frozenset[str] = frozenset({
     "GMAIL_EMAIL",
     "GMAIL_APP_PASSWORD", "GMAIL_PASSWORD",
-    "AVIARY_NEST_PASSPHRASE",
-    "AVIARY_SMTP_USER", "AVIARY_SMTP_PASS",
-    "VG_AGENT_TOKEN", "VG_AGENT_SECRET",
     "CLOUDFLARE_API_TOKEN",
     "OPENAI_API_KEY", "ANTHROPIC_API_KEY",
-    "OCI_PASSWORD", "PHOTON_PASSWORD",
     "SUDO_PASSWORD",
     "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN",
 })

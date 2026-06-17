@@ -5,10 +5,9 @@ Public:
         Computes bypass rate, fallback rate, probe failures, drift, and
         emergent refusal patterns. Writes alerts to:
           $MAGPIE_SEARCH_HOME/llm-alerts.jsonl  (own log)
-          $MAGPIE_SEARCH_HOME/cuckoo.jsonl      (if AVIARY_CUCKOO_LOG set — legacy)
 
 For standalone Magpi: run on a schedule (systemd timer / cron).
-For Aviary-mode: the aviary-magpi plugin registers this as `llm.trust_check`
+The companion plugin can register this as `llm.trust_check`
 which cuckoo fires hourly.
 """
 from __future__ import annotations
@@ -51,19 +50,19 @@ def _env_int(*names: str, default: int) -> int:
 
 
 ALARM_BYPASS_RATE_1H = _env_float(
-    "MAGPIE_SEARCH_TRUST_BYPASS_1H", "AVIARY_LLM_ALARM_BYPASS_1H", default=0.50,
+    "MAGPIE_SEARCH_TRUST_BYPASS_1H", default=0.50,
 )
 ALARM_FALLBACK_RATE_1H = _env_float(
-    "MAGPIE_SEARCH_TRUST_FALLBACK_1H", "AVIARY_LLM_ALARM_FALLBACK_1H", default=0.30,
+    "MAGPIE_SEARCH_TRUST_FALLBACK_1H", default=0.30,
 )
 ALARM_SAME_PROBE_1H = _env_int(
-    "MAGPIE_SEARCH_TRUST_SAME_PROBE_1H", "AVIARY_LLM_ALARM_SAME_PROBE_1H", default=5,
+    "MAGPIE_SEARCH_TRUST_SAME_PROBE_1H", default=5,
 )
 ALARM_DRIFT_DELTA = _env_float(
-    "MAGPIE_SEARCH_TRUST_DRIFT", "AVIARY_LLM_ALARM_DRIFT", default=0.20,
+    "MAGPIE_SEARCH_TRUST_DRIFT", default=0.20,
 )
 ALARM_MIN_N_1H = _env_int(
-    "MAGPIE_SEARCH_TRUST_MIN_N", "AVIARY_LLM_ALARM_MIN_N", default=3,
+    "MAGPIE_SEARCH_TRUST_MIN_N", default=3,
 )
 
 # Per-probe threshold overrides. Default global threshold (ALARM_SAME_PROBE_1H)
@@ -115,7 +114,7 @@ def _magpi_home() -> Path:
     # guarding against is when both env vars are SET but EMPTY: the prior
     # `Path(base) if base` correctly falls through. Belt-and-braces:
     # require a non-empty string.
-    base = os.environ.get("MAGPIE_SEARCH_HOME") or os.environ.get("AVIARY_TRANSCRIPTS_DIR")
+    base = os.environ.get("MAGPIE_SEARCH_HOME")
     if base and base.strip():
         return Path(base)
     return Path.home() / ".magpie-search"
@@ -123,8 +122,6 @@ def _magpi_home() -> Path:
 
 def _alert_path() -> Path:
     # Resolution: MAGPIE_SEARCH_ALERTS_LOG > $MAGPIE_SEARCH_HOME/llm-alerts.jsonl
-    # The aviary-magpi plugin sets MAGPIE_SEARCH_ALERTS_LOG=~/.aviary/llm-alerts.jsonl
-    # so an Aviary operator install keeps reading/writing the same path.
     override = os.environ.get("MAGPIE_SEARCH_ALERTS_LOG")
     if override:
         return Path(override)
@@ -132,13 +129,7 @@ def _alert_path() -> Path:
 
 
 def _cuckoo_path() -> Path | None:
-    """Legacy: when running under Aviary, also echo to cuckoo.jsonl."""
-    override = os.environ.get("AVIARY_CUCKOO_LOG")
-    if override:
-        return Path(override)
-    # Only if Aviary's home is in play, else skip
-    if os.environ.get("AVIARY_TRANSCRIPTS_DIR") or (Path.home() / ".aviary").exists():
-        return Path.home() / ".aviary" / "cuckoo.jsonl"
+    """Standalone build: no external echo path."""
     return None
 
 
