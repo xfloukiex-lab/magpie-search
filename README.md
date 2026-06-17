@@ -5,9 +5,9 @@
 <h1 align="center">Magpie Search</h1>
 
 <p align="center">
-  <a href="https://pypi.org/project/magpie-search/"><img alt="PyPI" src="https://img.shields.io/pypi/v/magpie-search.svg?color=7c5cff"></a>
-  <a href="https://pypi.org/project/magpie-search/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/magpie-search.svg?color=22d3ee"></a>
-  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg"></a>
+  <a href="https://pypi.org/project/magpie-search/"><img alt="PyPI" src="https://img.shields.io/pypi/v/magpie-search?color=7c5cff&cacheSeconds=300"></a>
+  <a href="https://pypi.org/project/magpie-search/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/magpie-search?color=22d3ee&cacheSeconds=300"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue?cacheSeconds=300"></a>
 </p>
 
 <p align="center"><b>A federated search engine — a search engine an AI reaches for when it needs to find something true to reason over.</b></p>
