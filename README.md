@@ -10,7 +10,7 @@
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue?cacheSeconds=300"></a>
 </p>
 
-<p align="center"><b>A federated search engine — a search engine an AI reaches for when it needs to find something true to reason over.</b></p>
+<p align="center"><b>A federated search engine — the search engine an AI agent or LLM reaches for when it needs to find something true to reason over.</b></p>
 
 ---
 
@@ -45,7 +45,7 @@ unless you turn it on. The AI's transcripts and files never leave. It plugs into
 whatever AI is running over **MCP**, so the agent can reach all six sources the
 instant it needs them.
 
-It is a tool for an AI.
+It is a tool for an AI — an agent or an LLM.
 
 ## What's inside
 
