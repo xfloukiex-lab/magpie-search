@@ -1,3 +1,4 @@
+<!-- mcp-name: io.github.xfloukiex-lab/magpie-search -->
 <p align="center">
   <img src="https://raw.githubusercontent.com/xfloukiex-lab/magpie-search/main/assets/magpie-logo.png" alt="Magpie Search" width="180">
 </p>
