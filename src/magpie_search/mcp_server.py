@@ -80,38 +80,68 @@ _TOOLS: list[dict[str, Any]] = [
     },
     {
         "name": "recent",
-        "description": "Most-recent N messages, optionally scoped to one session "
-                       "or project.",
+        "description": "Return the most-recent messages across the index, newest "
+                       "first. Use this to catch up on the latest activity (\"what "
+                       "was discussed most recently?\") without a search query. To "
+                       "read one specific known session in order, prefer the "
+                       "'session' tool instead. Optionally narrow to a single "
+                       "session or project. Read-only; each row includes its text, "
+                       "session id, and timestamp.",
         "inputSchema": {
             "type": "object",
             "properties": {
-                "n": {"type": "integer", "description": "message count (default 50)"},
-                "session_id": {"type": "string"},
-                "project": {"type": "string"},
+                "n": {"type": "integer",
+                      "description": "number of most-recent messages to return "
+                                     "(default 50)"},
+                "session_id": {"type": "string",
+                               "description": "only messages from this session id"},
+                "project": {"type": "string",
+                            "description": "only messages from this project slug"},
             },
         },
     },
     {
         "name": "session",
-        "description": "Paginated chronological view of one session's messages.",
+        "description": "Read one full conversation in chronological order, oldest "
+                       "message first, a page at a time. Use after you already have "
+                       "a session_id (from 'list_sessions' or a 'search' hit) and "
+                       "want to read that whole session in order rather than search "
+                       "across many. Page through long sessions with limit/offset. "
+                       "Read-only.",
         "inputSchema": {
             "type": "object",
             "properties": {
-                "session_id": {"type": "string"},
-                "limit": {"type": "integer", "description": "default 200"},
-                "offset": {"type": "integer", "description": "default 0"},
+                "session_id": {"type": "string",
+                               "description": "id of the session to read (from "
+                                              "'list_sessions' or a search result)"},
+                "limit": {"type": "integer",
+                          "description": "messages per page (default 200)"},
+                "offset": {"type": "integer",
+                           "description": "messages to skip from the start, for "
+                                          "paging (default 0)"},
             },
             "required": ["session_id"],
         },
     },
     {
         "name": "list_sessions",
-        "description": "List most-recent sessions for browsing.",
+        "description": "List the most-recent Claude Code sessions (conversations) "
+                       "in the index, newest first. This is the browse/discovery "
+                       "entry point: use it to find out what sessions exist and get "
+                       "their session_id values before calling 'session' (read one "
+                       "in full) or 'recent' (latest messages). Prefer 'search' when "
+                       "you are looking for specific content rather than browsing. "
+                       "Returns one row per session — session_id, project, message "
+                       "count, and last-activity time. Read-only; never modifies the "
+                       "index.",
         "inputSchema": {
             "type": "object",
             "properties": {
-                "project": {"type": "string"},
-                "limit": {"type": "integer", "description": "default 50"},
+                "project": {"type": "string",
+                            "description": "only list sessions in this project slug"},
+                "limit": {"type": "integer",
+                          "description": "max sessions to return, newest first "
+                                         "(default 50)"},
             },
         },
     },
