@@ -24,9 +24,9 @@ has ever worked through, locally, so a crash is a hiccup instead of amnesia.
 
 A normal search engine looks in one place. Magpie takes one question and fans it
 across everything that matters at once — the AI's entire conversation history,
-the files on the machine, a structured knowledge graph, a vector store, the live
-web, even YouTube — and pulls the answer back from wherever it actually lives.
-**Six sources, one call.**
+the files on the machine, a structured knowledge graph, a vector store, and the live
+web — and pulls the answer back from wherever it actually lives.
+**Five sources, one call.**
 
 And it searches each one the right way. It can grep for an exact string or regex
 when you know the precise token — a file path, an error, a line of code. It can
@@ -73,8 +73,8 @@ On top of that index sit the **five search modes**:
 
 Around that sits the **federation layer** — the part that makes it federated:
 
-- A **provider plugin system.** Six backends (transcripts, files, knowledge
-  graph, vector, web, YouTube), each returns `Hit` objects tagged with a trust
+- A **provider plugin system.** Five backends (transcripts, files, knowledge
+  graph, vector, web), each returns `Hit` objects tagged with a trust
   tier.
 - A **fan-out**: one query goes to all providers concurrently (≤8 workers), each
   with a 5-second timeout that **fails open** — a slow source contributes nothing
