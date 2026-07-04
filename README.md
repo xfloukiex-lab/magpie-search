@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/xfloukiex-lab-magpie-search-badge.png)](https://mseep.ai/app/xfloukiex-lab-magpie-search)
+
 <!-- mcp-name: io.github.xfloukiex-lab/magpie-search -->
 <p align="center">
   <img src="https://raw.githubusercontent.com/xfloukiex-lab/magpie-search/main/assets/magpie-logo.png" alt="Magpie Search" width="180">
