@@ -22,14 +22,28 @@ import hashlib
 import math
 import os
 import re
+import sys
 from typing import Any
 
 from .providers import make_provider
+from .redactor import redact
 from .providers.base import (
     DEFAULT_TRUST_WEIGHTS, TIER_RANK, Hit, Provider, TrustTier,
 )
 
 _WS = re.compile(r"\s+")
+
+
+# R4 (Aether audit 2026-07-26): the `errors` dict is returned to the caller
+# (and onward through MCP). Exception *messages* routinely embed the thing that
+# failed — a path, a DSN, a URL with a token — so stringifying the exception
+# put arbitrary internals on an outward-facing surface. Default to the class
+# name only; full detail goes to stderr when MAGPIE_SEARCH_DEBUG is set.
+def _error_label(e: BaseException, *, context: str) -> str:
+    if os.environ.get("MAGPIE_SEARCH_DEBUG"):
+        print(f"[magpie-search] {context}: {type(e).__name__}: {redact(str(e))}", file=sys.stderr)
+        return f"{type(e).__name__}: {redact(str(e))}"
+    return type(e).__name__
 
 
 def _dedup_key(text: str) -> str:
@@ -98,7 +112,7 @@ def federated_search(
         try:
             providers.append(make_provider(spec))
         except Exception as e:  # noqa: BLE001
-            errors[str(spec)] = f"{type(e).__name__}: {e}"
+            errors[str(spec)] = _error_label(e, context=f"provider {spec} failed to load")
     if not providers:
         return {"ok": False, "reason": "no usable sources", "errors": errors}
 
@@ -114,7 +128,7 @@ def federated_search(
             try:
                 hits = fut.result(timeout=timeout) or []
             except Exception as e:  # noqa: BLE001 - timeout or provider error
-                errors[p.name] = f"{type(e).__name__}: {e}"
+                errors[p.name] = _error_label(e, context=f"provider {p.name} search failed")
                 hits = []
             per_source_raw[p.name] = hits
 

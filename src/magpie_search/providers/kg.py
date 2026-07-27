@@ -15,7 +15,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-from .base import Hit, Provider, TrustTier
+from .base import Hit, Provider, TrustTier, valid_ident, valid_idents
 from ..redactor import redact
 from ..search import _sanitize_query, _quote_all
 
@@ -51,12 +51,20 @@ class KGProvider(Provider):
         if db is None or not db.exists():
             return []
         table = self.config.get("table", "facts")
+        # R11: refuse a malformed table name rather than interpolate it.
+        if not valid_ident(table):
+            return []
 
         src = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=10.0)
         src.row_factory = sqlite3.Row
         try:
             cols = self._columns(src, table)
             if not cols:
+                return []
+            # R11: columns may come from config too — same rule as `table`.
+            # PRAGMA-derived names are already safe; config-supplied ones are
+            # the reason this check exists.
+            if not valid_idents(cols):
                 return []
             col_sql = ", ".join(cols)
             rows = src.execute(

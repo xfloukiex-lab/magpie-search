@@ -175,6 +175,14 @@ def summarize(*, session_id: str, n_messages: int = 80) -> dict[str, Any]:
     ok, why = guardrails.detect_refusal_drift(summary_text)
     _run("refusal_drift", ok, why)
 
+    # R3 (Aether audit 2026-07-26): the only probe here that inspects the
+    # INPUT. `source` is text magpie did not author — transcripts, and via the
+    # web/deepweb path, pages anyone can publish. Advisory on purpose (not in
+    # _GATING_PROBES): a session that legitimately discusses prompt injection
+    # must still summarize, but the trust engine gets the signal.
+    ok, why = guardrails.content_contains_injection_markers(source)
+    _run("input_injection_markers", ok, why)
+
     raw_threshold = (
         os.environ.get("MAGPIE_SEARCH_SEMANTIC_GROUNDING_THRESHOLD")
         or "0.5"

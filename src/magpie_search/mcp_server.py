@@ -154,12 +154,11 @@ _TOOLS: list[dict[str, Any]] = [
         "name": "reindex",
         "description": "Run one incremental indexing pass so search is fresh. "
                        "Local-only; reads ~/.claude/projects transcripts.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "source": {"type": "string", "description": "override projects dir"},
-            },
-        },
+        # R19: `source` removed from the schema too — advertising a parameter
+        # the handler ignores is worse than not offering it, because a caller
+        # believes it took effect. Overriding the indexed directory is an
+        # operator action via CLI/config, not an MCP-callable one.
+        "inputSchema": {"type": "object", "properties": {}},
     },
 ]
 
@@ -240,7 +239,13 @@ def _h_stats(_a: dict[str, Any]) -> Any:
 
 
 def _h_reindex(a: dict[str, Any]) -> Any:
-    res = magpie_search.index(source=a.get("source"))
+    # R19 (Aether audit 2026-07-26): `source` used to flow straight from the
+    # MCP caller into the indexer's read path — the one writer-side entry point
+    # reachable over MCP, and MCP arguments are agent-supplied (an agent can be
+    # steered by injected text in the content it just read). Reindex now always
+    # runs the configured source; pointing the indexer somewhere else is an
+    # operator action (CLI/config), not something a tool call can ask for.
+    res = magpie_search.index()
     # index_all returns an IndexStats dataclass — coerce to a dict.
     if hasattr(res, "__dict__"):
         return dict(res.__dict__)

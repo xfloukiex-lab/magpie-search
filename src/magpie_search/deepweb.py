@@ -17,10 +17,73 @@ No agents, no per-agent context, no LLM cost for the breadth.
 from __future__ import annotations
 
 import re
+import socket
+import urllib.parse
 from dataclasses import dataclass, field
+from ipaddress import ip_address, ip_network
 
 from .providers.web import WebProvider
 from .redactor import redact
+
+# R12 (Aether audit 2026-07-26) — SSRF guard.
+# fetch_extract follows URLs that come out of a SEARCH ENGINE, so the target is
+# attacker-influenceable: rank a page for a niche query and you choose what this
+# fetches. Without a host check that reaches cloud metadata endpoints
+# (169.254.169.254), loopback admin panels, and private LAN hosts. The YouTube
+# provider already had an allowlist; this path had nothing.
+# Ranges are identified via the stdlib's own classification flags
+# (is_private / is_loopback / is_link_local / is_reserved) rather than a
+# hand-written CIDR table. Two reasons: the stdlib list is maintained against
+# the IANA special-purpose registry and cannot drift out of date here, and
+# spelling RFC-1918 literals in shipped source trips this project's own
+# personal-data scrub gate (tests/test_no_personal_leak.py), which is a rule
+# worth keeping strict. Verified against the flags: 10/8, 172.16/12, 192.168/16,
+# 127/8, 169.254/16, 0.0.0.0/8, 192.0.0.0/24, 198.18/15, ::1, fc00::/7 and
+# fe80::/10 are all caught; public addresses are not.
+#
+# CGNAT is the one gap — the stdlib marks it neither private nor reserved — so
+# it is named explicitly. It is not an RFC-1918 shape, so the scrub gate is fine.
+_CGNAT = ip_network("100.64.0.0/10")
+_MAX_REDIRECTS = 3
+
+
+def _is_public_host(host: str) -> bool:
+    """True only if every address `host` resolves to is publicly routable.
+
+    Fail-CLOSED: an unresolvable host, or one with any private/loopback/
+    link-local address, is refused. Checking every getaddrinfo result (not
+    just the first) is what stops a dual-homed name from slipping through.
+    """
+    if not host:
+        return False
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except OSError:
+        return False
+    if not infos:
+        return False
+    for res in infos:
+        try:
+            ip = ip_address(res[4][0])
+        except ValueError:
+            return False
+        # An IPv4-mapped IPv6 address (the ::ffff: prefix form) must be judged
+        # on the embedded v4 address, or a private target slips through as v6.
+        mapped = getattr(ip, "ipv4_mapped", None)
+        if mapped is not None:
+            ip = mapped
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+            return False
+        if ip.version == 4 and ip in _CGNAT:
+            return False
+    return True
+
+
+def _url_host_is_public(url: str) -> bool:
+    try:
+        return _is_public_host(urllib.parse.urlparse(url).hostname or "")
+    except Exception:
+        return False
 
 _RRF_K = 60  # standard RRF damping; smooths rank contributions
 
@@ -54,15 +117,39 @@ def fetch_extract(url: str, *, max_chars: int = 1500, timeout: float = 8.0) -> s
     nav/boilerplate stripped, output truncated to max_chars."""
     if not url.lower().startswith(("http://", "https://")):
         return ""
+    # R12: refuse non-public targets before any request is made.
+    if not _url_host_is_public(url):
+        return ""
     try:
         import httpx
         from bs4 import BeautifulSoup
     except Exception:
         return ""
     try:
-        with httpx.Client(follow_redirects=True, timeout=timeout,
+        # R12: redirects are followed MANUALLY so every hop is re-validated —
+        # `follow_redirects=True` would let a public URL 302 to
+        # 169.254.169.254 with only the first host ever checked.
+        with httpx.Client(follow_redirects=False, timeout=timeout,
                           headers={"User-Agent": _UA}) as client:
-            r = client.get(url)
+            current = url
+            r = None
+            for _ in range(_MAX_REDIRECTS + 1):
+                r = client.get(current)
+                if r.status_code not in (301, 302, 303, 307, 308):
+                    break
+                nxt = r.headers.get("location")
+                if not nxt:
+                    break
+                nxt = urllib.parse.urljoin(current, nxt)
+                if not nxt.lower().startswith(("http://", "https://")):
+                    return ""
+                if not _url_host_is_public(nxt):
+                    return ""
+                current = nxt
+            else:
+                return ""  # too many hops
+            if r is None:
+                return ""
             ctype = r.headers.get("content-type", "")
             if "html" not in ctype and "text" not in ctype:
                 return ""

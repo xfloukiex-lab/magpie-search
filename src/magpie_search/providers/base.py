@@ -13,10 +13,29 @@ stale memory layer.
 """
 from __future__ import annotations
 
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
+
+# R11 (Aether audit 2026-07-26). SQL identifiers (table/column names) cannot be
+# passed as bound parameters, so providers interpolate them into the statement.
+# That is only safe while config is trusted operator input — an assumption the
+# code relied on but never enforced. Validating here makes the trust boundary
+# explicit and closes the class by construction, so a future config loader that
+# takes user input cannot turn `table` into an injection point.
+_IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def valid_ident(name: Any) -> bool:
+    """True if `name` is a bare SQL identifier safe to interpolate."""
+    return isinstance(name, str) and bool(_IDENT_RE.match(name))
+
+
+def valid_idents(names: Any) -> bool:
+    """True if every element of `names` is a safe bare SQL identifier."""
+    return bool(names) and all(valid_ident(n) for n in names)
 
 
 class TrustTier(str, Enum):

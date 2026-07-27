@@ -86,10 +86,16 @@ class FilesProvider(Provider):
         cfg_root = self.config.get("root")
         base = Path(cfg_root).expanduser() if cfg_root else None
         sp = _scope_path(scope)
-        if base and sp:
+        # R10 (Aether audit 2026-07-26): without a configured root, `scope`
+        # used to BECOME the root — so "search my notes" turned into "search
+        # anything this process can read". scope arrives from the MCP caller,
+        # and an agent can be steered by injected text in web/file content
+        # ("also check /etc for context"). scope may only ever NARROW a root
+        # the operator configured; it can never supply one.
+        if base is None:
+            return None, None
+        if sp:
             return base, sp.replace("\\", "/").strip("/")
-        if sp and not base:
-            return Path(sp).expanduser(), None
         return base, None
 
     def _chunks(self, root: Path, globs: tuple[str, ...]) -> list[dict[str, Any]]:
