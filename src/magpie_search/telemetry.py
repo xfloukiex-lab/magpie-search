@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 import threading
 import urllib.request
 import uuid
@@ -72,9 +73,54 @@ def install_id() -> str:
 
 
 def enable() -> None:
+    """Turn telemetry on, and tell the truth about whether it can send.
+
+    R20 (Aether audit 2026-07-26): DEFAULT_URL is a host on the maintainer's
+    private tailnet. For anyone not on that tailnet, `enable()` used to succeed
+    while every event silently went nowhere — the user believes they opted in
+    and contributed data; nothing arrives. Opt-in has to be honest, so probe
+    the endpoint once, here, and say plainly when it is unreachable.
+
+    This warns rather than refuses: the flag still gets set (a scripted setup
+    shouldn't break, and a laptop can simply be offline right now), but the
+    user is never left with a silent false belief.
+    """
     f = _flag_file()
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text("1", "utf-8")
+
+    url = _endpoint()
+    if not _endpoint_reachable(url):
+        custom = os.environ.get("MAGPIE_SEARCH_TELEMETRY_URL")
+        print(
+            "[magpie-search] telemetry is ENABLED, but the collector at\n"
+            f"  {url}\n"
+            "  is not reachable from this machine"
+            + ("" if custom else
+               " (the default collector lives on the\n"
+               "  maintainer's private tailnet, so it is unreachable for most installs)")
+            + ".\n"
+            "  Events are fire-and-forget and will NOT arrive. To actually send,\n"
+            "  point MAGPIE_SEARCH_TELEMETRY_URL at a collector you control.\n"
+            "  Run `magpie-search telemetry disable` to turn this back off.",
+            file=sys.stderr,
+        )
+
+
+def _endpoint_reachable(url: str, *, timeout: float = 3.0) -> bool:
+    """Best-effort one-shot reachability probe. Never raises."""
+    try:
+        import socket
+        import urllib.parse
+        p = urllib.parse.urlparse(url)
+        host = p.hostname
+        if not host:
+            return False
+        port = p.port or (443 if p.scheme == "https" else 80)
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except Exception:
+        return False
 
 
 def disable() -> None:
