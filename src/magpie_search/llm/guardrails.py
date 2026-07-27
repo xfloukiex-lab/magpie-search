@@ -343,3 +343,39 @@ def detect_refusal_drift(text: str) -> tuple[bool, str | None]:
     if hits:
         return False, f"possible new refusal pattern: {hits[0]}"
     return True, None
+
+
+# ---------------------------------------------------------------------------
+# Input-side — injection markers in content that is about to be fed to an LLM.
+# R3 (Aether audit 2026-07-26). Every other probe in this file inspects model
+# OUTPUT. Nothing inspected the INPUT, yet magpie feeds the model text it did
+# not author: web snippets, fetched pages, transcripts of other people's
+# sessions. That is exactly where "ignore previous instructions" arrives.
+#
+# Deliberately a SIGNAL, not a firewall. It reports `degraded`, never a hard
+# refusal, because a transcript legitimately discussing prompt injection (this
+# project's own tests and notes do) must not become unsummarizable. Low recall
+# is fine and expected: the value is that the trust engine sees the drift.
+# ---------------------------------------------------------------------------
+
+_INJECTION_MARKERS = (
+    "ignore previous", "ignore the above", "ignore all previous",
+    "disregard the above", "disregard previous", "disregard all",
+    "you are now", "new instructions:", "system:", "system prompt:",
+    "[[system", "</instructions>", "<|im_start|>", "override the",
+    "forget everything", "act as though", "reveal your prompt",
+)
+
+
+def content_contains_injection_markers(text: str) -> tuple[bool, str | None]:
+    """Scan LLM *input* for prompt-injection markers.
+
+    Returns (True, None) when clean, (False, reason) when markers appear.
+    A False here means "degraded — treat this summary with suspicion", not
+    "refuse", so legitimate discussion of injection still summarizes.
+    """
+    low = (text or "").lower()
+    hits = [m for m in _INJECTION_MARKERS if m in low]
+    if hits:
+        return False, f"possible injection markers: {hits[:3]}"
+    return True, None

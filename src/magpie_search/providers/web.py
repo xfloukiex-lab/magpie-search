@@ -13,6 +13,7 @@ magpie's store) and NEVER raises — returns [] on any error / missing dep.
 """
 from __future__ import annotations
 
+import sys as _sys
 from typing import Any
 
 from ..redactor import redact
@@ -34,6 +35,19 @@ class WebProvider(Provider):
         query = (query or "").strip()
         if not query:
             return []
+        # R2 (Aether audit 2026-07-26): the query leaves the machine. magpie's
+        # promise is local-first, so a secret pasted into a search ("why does
+        # sk-... 401") must not be handed to a third-party engine verbatim.
+        # Redact before the call, and say so on stderr — a silent redaction
+        # would look like the engine simply returned nothing useful.
+        outbound = redact(query)
+        if outbound != query:
+            print(
+                "[magpie-search] web query redacted before outbound search "
+                "(a secret-shaped token was removed)",
+                file=_sys.stderr,
+            )
+        query = outbound
         try:
             from ddgs import DDGS
         except Exception:
@@ -69,7 +83,12 @@ class WebProvider(Provider):
                 trust=self.trust,
                 category=self.category,
                 score=float(len(raw) - rank),   # earlier result = higher score
-                provenance={"url": url, "title": title},
+                # R1 (Aether audit 2026-07-26): provenance is returned to the
+                # caller just like `text`, so it must clear the same bar. A URL
+                # can carry a secret in a query string / userinfo (a leaked
+                # token echoed back in a search result), and title is
+                # page-controlled. Redacting only `text` left a silent hole.
+                provenance={"url": redact(url), "title": redact(title)},
             ))
         return hits
 

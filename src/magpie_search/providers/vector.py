@@ -18,7 +18,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-from .base import Hit, Provider, TrustTier
+from .base import Hit, Provider, TrustTier, valid_idents
 from ..redactor import redact
 from .. import embeddings
 from ..indexer import _load_vec_extension, vec_available
@@ -56,6 +56,14 @@ class VectorProvider(Provider):
         text_col = self.config.get("text_column", "text")
         emb_col = self.config.get("embedding_column", "embedding")
         meta_cols = _as_list(self.config.get("metadata_columns"))
+        # R11 (Aether audit 2026-07-26): same identifier-interpolation shape as
+        # KGProvider — every one of these is f-stringed into SQL. Validate all
+        # of them before any statement is built. meta_cols may legitimately be
+        # empty; the others must be real bare identifiers.
+        if not valid_idents([vec_table, content_table, text_col, emb_col]):
+            return []
+        if meta_cols and not valid_idents(meta_cols):
+            return []
 
         conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=10.0)
         conn.row_factory = sqlite3.Row

@@ -35,6 +35,9 @@ from typing import Any, Iterator
 from .redactor import redact
 from . import embeddings
 
+# R22: unknown Claude Code block types announced once per process.
+_SEEN_UNKNOWN_BLOCK_TYPES: set[str] = set()
+
 
 # --- personal-magpie_search dedup helpers --------------------------------------
 # Optional — gated by MAGPIE_SEARCH_DEDUP / MAGPIE_SEARCH_NOISE_FILTER env vars so
@@ -447,9 +450,20 @@ def _extract_text_from_content(content: Any) -> list[tuple[str, str]]:
             if txt.strip():
                 out.append(("tool_result", redact(txt)[:8000]))  # redact before truncate
         else:
-            # Unknown block type — index a stub for visibility. Redact before
-            # truncating (see tool_use note above).
-            out.append((f"block:{t}", redact(json.dumps(item, ensure_ascii=False))[:2000]))
+            # R22 (Aether audit 2026-07-26): the source is Claude Code JSONL and
+            # its schema evolves. Serializing an unrecognised block whole meant
+            # betting that redact() covers a shape nobody has seen yet — the one
+            # place the redactor is asked to work blind. Index the TYPE (so the
+            # block is still discoverable and the operator learns it exists) and
+            # drop the body. Announce each new type once per process.
+            if t not in _SEEN_UNKNOWN_BLOCK_TYPES:
+                _SEEN_UNKNOWN_BLOCK_TYPES.add(t)
+                print(
+                    f"[magpie-search] unknown block type {t!r} — indexing the "
+                    f"type only, not its content",
+                    file=sys.stderr,
+                )
+            out.append((f"block:{t}", ""))
     return out
 
 
