@@ -12,6 +12,60 @@ changes when called out).
 > from `MAGPIE_SEARCH_*` to `MAGPI_*`; data dir from `~/.magpie-search/` to `~/.magpi/`;
 > CLI command from `magpie-search` to `magpi`.
 
+## [1.3.0] — 2026-07-26
+
+Security + robustness pass from an external audit of the whole codebase by
+Andrew ("Aether"), covering ~9,000 LOC across three parts. No finding was
+exploitable as shipped; these close hardening gaps and future traps. Every fix
+carries a regression test that fails without it.
+
+### Security
+- **deepweb SSRF guard.** `fetch_extract` follows URLs chosen by a search
+  engine, so its target is attacker-influenceable. Hosts must now resolve
+  entirely to public addresses; cloud-metadata, loopback, link-local, private
+  and CGNAT targets are refused before any request. Redirects are followed
+  manually and re-validated per hop (max 3) — previously a public URL could
+  redirect to a private one with only the first host checked. IPv4-mapped IPv6
+  is judged on the embedded address. Unresolvable hosts fail closed.
+- **Web provider no longer leaks through provenance.** `provenance.url` and
+  `provenance.title` are redacted like `text` already was — a URL can carry a
+  secret in its query string, and titles are page-controlled.
+- **Outbound web queries are redacted** before reaching the search engine, and
+  the redaction is announced rather than silent.
+- **Federation error surface scrubbed.** The `errors` dict now carries the
+  exception class, not its message (messages embed paths, DSNs, tokens). Full
+  detail requires `MAGPIE_SEARCH_DEBUG`, and is redacted even then.
+- **Input-side prompt-injection probe.** Every prior guardrail inspected model
+  output; nothing inspected input, though magpie feeds the model text it did
+  not author. Advisory, not gating — discussing injection must not break
+  summarization.
+- **SQL identifiers validated** in the KG and vector providers. Config-supplied
+  table/column names were interpolated into SQL, which is safe only while
+  config is trusted — an assumption never enforced. Both now refuse before
+  opening the database.
+- **Files provider scope can no longer become the root.** With no configured
+  root, a caller-supplied `scope` used to become the search root, turning
+  "search my notes" into "search anything this process can read".
+- **MCP `reindex` no longer accepts `source`.** It was the one writer-side
+  entry point reachable over MCP, taking a caller-supplied path. Removed from
+  both the handler and the advertised schema.
+
+### Changed
+- **Unknown transcript block types index the type only, not the content.**
+  Serializing an unrecognised block whole asked the redactor to work blind on a
+  schema nobody has seen. Each new type is announced once per process.
+- **`telemetry enable` tells the truth.** The default collector sits on the
+  maintainer's private tailnet, so for most installs every event silently went
+  nowhere while the user believed they had opted in. Enable now probes the
+  endpoint and says plainly when it is unreachable. It warns rather than
+  refuses, so scripted setups and offline machines still work.
+
+### Notes
+- Larger items from the audit are deliberately deferred, not forgotten:
+  indexer-error observability, an independent verifier model for the
+  summarizer, and the cross-cutting proposal to make the config trust boundary
+  explicit and validated at load.
+
 ## [1.0.0] — 2026-05-29
 
 First stable release. **Renamed `magpi` → `magpie-search`** and hardened to
