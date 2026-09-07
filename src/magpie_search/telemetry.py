@@ -25,9 +25,10 @@ from pathlib import Path
 
 from . import __version__
 
-# The collector endpoint (operator-hosted; override to point elsewhere or to a
-# self-hosted collector). Anonymous events POST here only when opted in.
-DEFAULT_URL = "https://[redacted-tailnet]/v1/ingest"
+# The collector endpoint. There is NO built-in default: a public package must not carry any
+# maintainer host, so events go nowhere unless MAGPIE_SEARCH_TELEMETRY_URL names a collector you
+# control. Anonymous events POST there only when opted in.
+DEFAULT_URL = ""
 
 # A safe value is a number/bool, or a short token with no spaces (mode names,
 # error classes, os/arch). Anything else (free text = possible user content) is
@@ -75,11 +76,10 @@ def install_id() -> str:
 def enable() -> None:
     """Turn telemetry on, and tell the truth about whether it can send.
 
-    R20 (Aether audit 2026-07-26): DEFAULT_URL is a host on the maintainer's
-    private tailnet. For anyone not on that tailnet, `enable()` used to succeed
-    while every event silently went nowhere — the user believes they opted in
-    and contributed data; nothing arrives. Opt-in has to be honest, so probe
-    the endpoint once, here, and say plainly when it is unreachable.
+    R20 (Aether audit 2026-07-26): `enable()` used to succeed while every event
+    silently went nowhere — the user believes they opted in and contributed
+    data; nothing arrives. Opt-in has to be honest, so say plainly when there is
+    no collector configured or the configured one is unreachable.
 
     This warns rather than refuses: the flag still gets set (a scripted setup
     shouldn't break, and a laptop can simply be offline right now), but the
@@ -90,19 +90,19 @@ def enable() -> None:
     f.write_text("1", "utf-8")
 
     url = _endpoint()
-    if not _endpoint_reachable(url):
-        custom = os.environ.get("MAGPIE_SEARCH_TELEMETRY_URL")
+    if not url:
+        print(
+            "[magpie-search] telemetry is ENABLED, but no collector is configured, so\n"
+            "  nothing will be sent. Point MAGPIE_SEARCH_TELEMETRY_URL at a collector you\n"
+            "  control, or run `magpie-search telemetry disable` to turn this back off.",
+            file=sys.stderr,
+        )
+    elif not _endpoint_reachable(url):
         print(
             "[magpie-search] telemetry is ENABLED, but the collector at\n"
             f"  {url}\n"
-            "  is not reachable from this machine"
-            + ("" if custom else
-               " (the default collector lives on the\n"
-               "  maintainer's private tailnet, so it is unreachable for most installs)")
-            + ".\n"
-            "  Events are fire-and-forget and will NOT arrive. To actually send,\n"
-            "  point MAGPIE_SEARCH_TELEMETRY_URL at a collector you control.\n"
-            "  Run `magpie-search telemetry disable` to turn this back off.",
+            "  is not reachable from this machine. Events are fire-and-forget and will\n"
+            "  NOT arrive. Run `magpie-search telemetry disable` to turn this back off.",
             file=sys.stderr,
         )
 
@@ -149,10 +149,13 @@ def _clean(props: dict) -> dict:
 
 
 def _send(payload: dict) -> None:
+    url = _endpoint()
+    if not url:
+        return                                   # no collector configured: nothing to send to
     try:
         data = json.dumps(payload).encode()
         req = urllib.request.Request(
-            _endpoint(), data=data,
+            url, data=data,
             headers={"Content-Type": "application/json"}, method="POST")
         urllib.request.urlopen(req, timeout=3).read()
     except Exception:
@@ -198,5 +201,5 @@ def maybe_first_run_notice() -> None:
 
 
 def status() -> dict:
-    return {"enabled": is_enabled(), "endpoint": _endpoint(),
+    return {"enabled": is_enabled(), "endpoint": _endpoint() or "(none configured)",
             "install_id": install_id() if is_enabled() else "(set on first opt-in)"}
