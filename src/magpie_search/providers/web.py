@@ -19,6 +19,31 @@ from typing import Any
 from ..redactor import redact
 from .base import Hit, Provider, TrustTier
 
+# Which optional dependencies have already been reported missing, so a loop over
+# many URLs warns once rather than once per call.
+_WARNED: set[str] = set()
+
+
+def warn_missing_dep(dep: str, extra: str, what: str) -> None:
+    """Say ONCE, on stderr, that an optional dependency is absent.
+
+    The provider contract is to return [] and never raise, which is right — a
+    missing extra must not take down a federated search that other sources can
+    still answer. But an empty result set is ALSO what a genuine no-match looks
+    like, so without this the two are indistinguishable and the user has no
+    reason to suspect an install problem. Silence here is what made this cost an
+    investigation instead of a glance.
+    """
+    if dep in _WARNED:
+        return
+    _WARNED.add(dep)
+    print(
+        f"[magpie-search] {what} is unavailable: the '{dep}' package is not "
+        f"installed, so this returns no results. Install it with: "
+        f"pip install 'magpie-search[{extra}]'",
+        file=_sys.stderr,
+    )
+
 
 class WebProvider(Provider):
     category = "web"
@@ -51,6 +76,7 @@ class WebProvider(Provider):
         try:
             from ddgs import DDGS
         except Exception:
+            warn_missing_dep("ddgs", "web", "web search")
             return []
 
         engines = self.config.get("backend") or self.config.get("backends") \
@@ -98,5 +124,11 @@ class WebProvider(Provider):
             import ddgs  # noqa: F401
         except Exception:
             ok = False
-        return {"name": self.name, "category": self.category, "ok": ok,
-                "backend": "duckduckgo/ddgs"}
+        out = {"name": self.name, "category": self.category, "ok": ok,
+               "backend": "duckduckgo/ddgs"}
+        if not ok:
+            # Name the cause and the remedy. `ok: False` on its own tells the
+            # caller something is wrong but not that it is a one-line fix.
+            out["reason"] = "the 'ddgs' package is not installed"
+            out["fix"] = "pip install 'magpie-search[web]'"
+        return out

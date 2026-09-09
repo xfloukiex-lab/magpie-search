@@ -164,10 +164,21 @@ set. That's the whole saving: the breadth is free, you pay only for the answer.
 pip install magpie-search
 ```
 
-Or install the latest straight from source (pulls all dependencies):
+**Live web search and `deepweb` need the `web` extra:**
 
 ```bash
-pip install "git+https://github.com/xfloukiex-lab/magpie-search.git"
+pip install "magpie-search[web]"
+```
+
+Without it, `--sources web` and `deepweb` return **no results** — the web
+provider is designed to fail soft so it can never break a federated search, so a
+missing dependency looks exactly like a search that found nothing. As of 1.3.1 it
+also prints a one-line reason on stderr instead of failing silently.
+
+Or install the latest straight from source:
+
+```bash
+pip install "git+https://github.com/xfloukiex-lab/magpie-search.git#egg=magpie-search[web]"
 ```
 
 Optional — add the local-LLM features (the cross-encoder reranker runs on the
@@ -303,6 +314,13 @@ and Task Scheduler (Windows).
   [Git for Windows](https://git-scm.com/download/win), which ships rsync.
 - **Search returns nothing** — run `magpie-search stats`; if `last_indexed_at` is
   null, run `magpie-search index`.
+- **`--sources web` or `deepweb` returns nothing** — the `web` extra is not
+  installed: `pip install "magpie-search[web]"`. Check with
+  `python -c "from magpie_search.providers.web import WebProvider; print(WebProvider().health())"`
+  — you want `ok: True`. If it is `ok: True` and results are still empty, the
+  search engines are refusing your requests, which is common from datacenter or
+  VPS address ranges; try from a different network or set a different engine
+  order via the provider's `backends=` config.
 - **Summarizer always `degraded`** — that's the false-positive guard working as
   designed. Raw transcripts remain available via `session SESSION-ID`.
 

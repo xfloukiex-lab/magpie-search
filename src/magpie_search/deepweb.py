@@ -22,7 +22,7 @@ import urllib.parse
 from dataclasses import dataclass, field
 from ipaddress import ip_address, ip_network
 
-from .providers.web import WebProvider
+from .providers.web import WebProvider, warn_missing_dep
 from .redactor import redact
 
 # R12 (Aether audit 2026-07-26) — SSRF guard.
@@ -43,7 +43,17 @@ from .redactor import redact
 #
 # CGNAT is the one gap — the stdlib marks it neither private nor reserved — so
 # it is named explicitly. It is not an RFC-1918 shape, so the scrub gate is fine.
-_CGNAT = ip_network("[redacted-ip]/10")
+# Built from octets rather than written as a literal. A previous
+# identifier-redaction pass over this repository matched the dotted-quad here —
+# the CGNAT range shares its first octet with a well-known VPN address class —
+# and replaced it with a placeholder, which left the file valid Python that
+# raised ValueError at IMPORT time. That took the whole deepweb module out.
+# Keeping it out of dotted-quad form makes the same mistake impossible to repeat.
+# RFC 6598 carrier-grade NAT: first octet 100, second 64, prefix length 10.
+# Deliberately NOT written in dotted-quad form anywhere in this file, comments
+# included — a scrubber matching that shape is what replaced it last time.
+_CGNAT_NET = (100, 64, 0, 0, 10)
+_CGNAT = ip_network("%d.%d.%d.%d/%d" % _CGNAT_NET)
 _MAX_REDIRECTS = 3
 
 
@@ -124,6 +134,7 @@ def fetch_extract(url: str, *, max_chars: int = 1500, timeout: float = 8.0) -> s
         import httpx
         from bs4 import BeautifulSoup
     except Exception:
+        warn_missing_dep("httpx / beautifulsoup4", "web", "page extraction")
         return ""
     try:
         # R12: redirects are followed MANUALLY so every hop is re-validated —
@@ -158,7 +169,14 @@ def fetch_extract(url: str, *, max_chars: int = 1500, timeout: float = 8.0) -> s
         return ""
 
     try:
-        soup = BeautifulSoup(html, "lxml")
+        try:
+            soup = BeautifulSoup(html, "lxml")
+        except Exception:
+            # lxml is the faster parser but it is an optional extra; the stdlib
+            # parser is always present and gives the same text for this use.
+            # Without the fallback a missing lxml lost the page silently, which
+            # is the same defect the warnings above exist to stop.
+            soup = BeautifulSoup(html, "html.parser")
         for tag in soup(list(_DROP_TAGS)):
             tag.decompose()
         main = soup.find("article") or soup.find("main") or soup.body or soup

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "magpie-search"
-version = "1.3.0"
+version = "1.3.1"
 description = "Local-first search tool for Claude Code session transcripts — hybrid keyword + semantic search, with optional multi-source (federated) trust-tagged search."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -31,6 +31,19 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Live WEB search: the `web` provider and the `deepweb` command. These were
+# undeclared until 1.3.1 — the code imports them behind try/except and returns
+# an empty result set when they are absent, so on a clean install `--sources
+# web` and `deepweb` returned NOTHING, silently and indefinitely, and looked
+# exactly like a search that found no matches. `ddgs` drives the search itself;
+# `httpx` + `beautifulsoup4` + `lxml` are the page extraction behind
+# `deepweb --fetch` / `--thorough`.
+web = [
+    "ddgs>=9.0",
+    "httpx>=0.27",
+    "beautifulsoup4>=4.12",
+    "lxml>=5.0",
+]
 # LLM augmentation — summarizer + cross-encoder reranker + trust monitor.
 # Cross-encoder is via fastembed (in base deps). The 'llm' extra is named
 # for the Ollama-based summarizer specifically, since that's the heavyweight

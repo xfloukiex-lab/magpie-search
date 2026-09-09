@@ -118,7 +118,11 @@ def test_r20_enable_warns_when_collector_unreachable(tmp_path, monkeypatch, caps
     monkeypatch.setenv("MAGPIE_SEARCH_HOME", str(tmp_path))
     monkeypatch.setenv("MAGPIE_SEARCH_TELEMETRY_URL", "https://127.0.0.1:9/nope")
     telemetry.enable()
-    err = capsys.readouterr().err.lower()
+    # Collapse whitespace before matching: the warning is line-wrapped for the
+    # terminal, so "will not arrive" spans a newline. Asserting on the wrapped
+    # form tests the layout rather than the behaviour, and broke when the
+    # message was rewrapped.
+    err = " ".join(capsys.readouterr().err.lower().split())
     assert telemetry.is_enabled(), "flag should still be set"
     assert "not reachable" in err and "will not arrive" in err, \
         "R20: enable() was silent about an unreachable collector"
