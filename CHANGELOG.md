@@ -12,6 +12,38 @@ changes when called out).
 > from `MAGPIE_SEARCH_*` to `MAGPI_*`; data dir from `~/.magpie-search/` to `~/.magpi/`;
 > CLI command from `magpie-search` to `magpi`.
 
+## [1.3.1] — 2026-09-09
+
+Web search and `deepweb` were unusable on any clean install. Two independent
+faults, both silent.
+
+### Fixed
+- **`deepweb` raised at import.** The CGNAT range in the SSRF guard was written
+  as a dotted-quad literal, and an identifier-redaction pass over the repository
+  matched and replaced it — leaving valid Python that raised `ValueError` on
+  module load, so any import of `magpie_search.deepweb` failed. The range is now
+  built from octets and appears in no dotted-quad form in the file, comments
+  included. The guard itself is unchanged and re-verified against
+  cloud-metadata, loopback and CGNAT targets.
+- **Page extraction no longer disappears when `lxml` is missing** — it falls
+  back to the standard-library parser instead of silently returning nothing.
+
+### Added
+- **`web` extra: `pip install "magpie-search[web]"`** (`ddgs`, `httpx`,
+  `beautifulsoup4`, `lxml`). These were never declared, so `--sources web` and
+  `deepweb` returned empty results on every clean install — indistinguishable
+  from a search that found nothing.
+- **The missing dependency now says so.** One line on stderr naming the package
+  and the install command, emitted once per process, and `health()` reports the
+  cause and the fix rather than a bare `ok: false`. Fail-soft behaviour is
+  unchanged: a missing extra still never breaks a federated search that other
+  sources can answer.
+
+### Notes
+- A telemetry test asserted against the warning's line wrapping rather than its
+  content; it now normalises whitespace. It had been invisible because the
+  import failure above stopped test collection for that file.
+
 ## [1.3.0] — 2026-07-26
 
 Security + robustness pass from an external audit of the whole codebase by
